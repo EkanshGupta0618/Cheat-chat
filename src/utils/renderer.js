@@ -368,6 +368,7 @@ async function startCapture(screenshotIntervalSeconds = 5, imageQuality = 'mediu
         console.log('Manual mode enabled - screenshots will be captured on demand only');
     } catch (err) {
         console.error('Error starting capture:', err);
+        cheatChatMaster.addNewResponse(`Error: Could not start screen capture (${err.message}). Check Screen Recording permission and restart the app.`);
         cheatChatMaster.setStatus('error');
     }
 }
@@ -566,8 +567,19 @@ async function captureManualScreenshot(imageQuality = null) {
     console.log('Manual screenshot triggered');
     const quality = imageQuality || currentImageQuality;
 
+    if (!mediaStream || !mediaStream.active) {
+        // Try to (re)acquire the screen stream before giving up
+        try {
+            mediaStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 1 }, audio: false });
+        } catch (error) {
+            console.error('Could not acquire screen stream:', error);
+            mediaStream = null;
+        }
+    }
+
     if (!mediaStream) {
         console.error('No media stream available');
+        cheatChatMaster.addNewResponse('Error: No screen capture available. Check Screen Recording permission and restart the session.');
         return;
     }
 
@@ -594,6 +606,7 @@ async function captureManualScreenshot(imageQuality = null) {
     // Check if video is ready
     if (hiddenVideo.readyState < 2) {
         console.warn('Video not ready yet, skipping screenshot');
+        cheatChatMaster.addNewResponse('Error: Screen capture is not ready yet. Try again in a moment.');
         return;
     }
 
@@ -630,6 +643,7 @@ async function captureManualScreenshot(imageQuality = null) {
         async blob => {
             if (!blob) {
                 console.error('Failed to create blob from canvas');
+                cheatChatMaster.addNewResponse('Error: Failed to capture the screen.');
                 return;
             }
 
@@ -639,6 +653,7 @@ async function captureManualScreenshot(imageQuality = null) {
 
                 if (!base64data || base64data.length < 100) {
                     console.error('Invalid base64 data generated');
+                    cheatChatMaster.addNewResponse('Error: Screenshot was empty.');
                     return;
                 }
 

@@ -35,11 +35,23 @@ function createWindow(sendToRenderer, geminiSessionRef) {
     const { session, desktopCapturer } = require('electron');
     session.defaultSession.setDisplayMediaRequestHandler(
         (request, callback) => {
-            desktopCapturer.getSources({ types: ['screen'] }).then(sources => {
-                callback({ video: sources[0], audio: 'loopback' });
-            });
+            desktopCapturer
+                .getSources({ types: ['screen'] })
+                .then(sources => {
+                    if (!sources.length) {
+                        console.error('No screen sources found - check Screen Recording permission for', process.execPath);
+                        callback({});
+                        return;
+                    }
+                    // 'loopback' audio is not supported on macOS (audio comes from SystemAudioDump) and makes the request fail there
+                    callback(process.platform === 'darwin' ? { video: sources[0] } : { video: sources[0], audio: 'loopback' });
+                })
+                .catch(error => {
+                    console.error('desktopCapturer.getSources failed:', error);
+                    callback({});
+                });
         },
-        { useSystemPicker: true }
+        { useSystemPicker: false }
     );
 
     mainWindow.setContentProtection(true);
