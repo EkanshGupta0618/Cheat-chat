@@ -7,7 +7,7 @@
     "scripts": {
         "start": "electron-forge start",
         "package": "electron-forge package",
-        "make": "electron-forge make",
+        "make": "npm explore electron-winstaller -- node script/select-7z-arch.js && electron-forge make",
         "publish": "electron-forge publish",
         "lint": "echo \"No linting configured\""
     },
@@ -42,7 +42,10 @@
         "electron": "^44.7.0"
     },
     "allowScripts": {
-        "electron@30.5.1": true,
+        "electron@44.7.0": true,
         "electron-winstaller@5.4.0": true
+    },
+    "overrides": {
+        "yauzl": "^3.4.0"
     }
 }
